@@ -1,6 +1,7 @@
 package com.Learning.Employee_Management.service;
 
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import static org.springframework.security.core.userdetails.User.withUsername;
 
 @Configuration
-@AllArgsConstructor
+@RequiredArgsConstructor
 @EnableWebSecurity
 public class WebSecurityConfig  {
 
@@ -35,12 +36,25 @@ public class WebSecurityConfig  {
 //    @Bean
 //    public SecurityFilterChain  securityFilterChain(HttpSecurity httpSecurity ) throws Exception{
 //        httpSecurity
+    // 1. DISABLE CSRF:
+    // We disable this because CSRF protection is designed for sessions/cookies.
+    // Since we are using JWT (stateless), we don't need it.
 //                .csrf(csrfConfig->csrfConfig.disable())
+    // 2. SET STATELESS SESSION:
+    // This tells Spring Boot: "Do not save user data in a session on the server".
+    // Every request must be independent and carry its own "ID" (the JWT).
 //                .sessionManagement(sessionconfig ->
 //                        sessionconfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+    // 3. DEFINE URL PERMISSIONS:
 //                .authorizeHttpRequests(auth->auth
+    // Allow everyone to access URLs starting with /auth/ (Login/Register).
+    // They don't need a token to get here because they are trying to GET one.
 //                        .requestMatchers("/api/employees/**")
+    // Only allow users with the "ADMIN" role to touch employee data.
+    // Spring will look for "ROLE_ADMIN" in your database/token.
 //                        .permitAll()
+    // Any other URL not mentioned above (like /api/profile)
+    // requires the user to be logged in with a valid token.
 //                        .anyRequest().authenticated()
 //                )
 //                .formLogin(Customizer.withDefaults());
@@ -71,30 +85,36 @@ public class WebSecurityConfig  {
 //
 //
 
-@Autowired
-    private final JwtAuthFilter jwtAuthFilter; // Logic: Bring the Guard to the building
+
+    private final JwtAuthFilter jwtAuthFilter;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-                .csrf(csrf -> csrf.disable()) // Logic: JWT doesn't need CSRF
+                .csrf(csrf -> csrf.disable())
+
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Logic: No Cookies
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // Logic: Public login door
-                        .requestMatchers("/api/employees/**").hasRole("ADMIN") // Logic: Protected Module
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/employees/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                // Logic: Tell the Guard to check tokens BEFORE checking passwords
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                // Logic: Guard checks the JWT Dish for every internal request
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Logic: The Door for Google/GitHub (Step 1 in your diagram)
+                .oauth2Login(oauth2Config -> oauth2Config
+                        .failureUrl("/login?error=true")
+                        .successHandler(oAuth2SuccessHandler) // Step: "triggers OAuth2SuccessHandler"
+                );
 
         return httpSecurity.build();
     }
-
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
-
 }

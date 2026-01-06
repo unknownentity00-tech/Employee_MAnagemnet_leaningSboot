@@ -4,6 +4,7 @@ import com.Learning.Employee_Management.entity.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -12,9 +13,21 @@ import java.util.Date;
 
 @Component
 public class JwtUtils {
+   // private final DataSourceTransactionManager dataSourceTransactionManager;
     // Pulls the "Salt" from application.properties
     @Value("${jwt.secretKey}")
     private String jwtSecretKey;
+
+    @Value("${jwt.accessTokenExpirationMs}")
+    private long accessExpiration;
+
+    @Value("${jwt.refreshTokenExpirationMs}")
+    private long refreshExpiration;
+
+   /* public JwtUtils(DataSourceTransactionManager dataSourceTransactionManager) {
+        this.dataSourceTransactionManager = dataSourceTransactionManager;
+    }
+*/
 
     /**
      * Step 2: Adds the Salt
@@ -33,11 +46,32 @@ public class JwtUtils {
                 .subject(user.getUsername()) // Step 1: Payload Subject (Fixed casing)
                 .claim("UserId", user.getId().toString()) // Step 1: Custom Claim
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 3000 * 1000)) // 50-minute expiry
+                .expiration(new Date(System.currentTimeMillis() + 300 * 1000)) // 50-minute expiry
                 .signWith(getSecretKey()) // Step 3: Hashing with Salt
                 .compact(); // Final "Envelope" creation
     }
 
+  public String generateAccessToken(User user){
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .claim("userId", user.getId().toString())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 100*3000))
+                .signWith(getSecretKey())
+                .compact();
+  }
+
+
+  public String generateRefreshToken(User user){
+        return Jwts.builder()
+                . subject(user.getUsername())
+                .claim("userId", user.getId().toString())
+                .issuedAt(new Date())
+                .expiration( new Date(System.currentTimeMillis() + 1000* 3000))
+                .signWith(getSecretKey())
+                .compact();
+
+  }
     /**
      * Verification Logic: Checking the "Dish"
      * Extracts the username after verifying the signature.

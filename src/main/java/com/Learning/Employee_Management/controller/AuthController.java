@@ -22,7 +22,9 @@ public class AuthController {
     @PostMapping("/login") // Matches Step 1: Login Request in your diagrams
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
         // Sends the request to the AuthService pipeline
-        return ResponseEntity.ok(authService.login(loginRequest));
+        LoginResponse loginResponse = authService.login(loginRequest);
+        return ResponseEntity.ok(loginResponse);
+//        return ResponseEntity.ok(authService.login(loginRequest));
     }
 
 

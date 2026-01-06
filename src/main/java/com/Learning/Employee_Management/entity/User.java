@@ -29,6 +29,8 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    private String email;
+
     private String role; // e.g., "ROLE_USER" or "ROLE_ADMIN"
 
 

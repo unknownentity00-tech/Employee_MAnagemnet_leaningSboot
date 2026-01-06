@@ -22,21 +22,32 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest loginRequest) {
         // 1. Send credentials to the Authentication Manager (The Receptionist)
+//        Authentication authentication = authenticationManager.authenticate(
+//                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
+//
+//
+// 1. Authenticate against Database (via UserDetailsService)
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        loginRequest.getUsername(),
+                        loginRequest.getPassword())
+
         );
 
         // 2. Retrieve the User Entity from the successful authentication
         User user = (User) authentication.getPrincipal();
 
         // 3. Prepare the "JWT Dish" using your secret salt from application.properties
-        String token = jwtUtils.generateToken(user);
-
+//        String token = jwtUtils.generateToken(user);
+        String  accesstoken  = jwtUtils.generateToken( user);
+        String  refreshtoken = jwtUtils.generateRefreshToken(user);
         // 4. Return the response. Ensure types match your LoginResponse constructor!
         // If your DTO expects (String, Long), use user.getId()
-        return new LoginResponse(token,
-                user.getUsername(), // Fixed: Long converted to String
-                user.getRole());
+//        return new LoginResponse(token,
+//                user.getUsername(), // Fixed: Long converted to String
+//                user.getRole());
+
+        return new LoginResponse(accesstoken , refreshtoken);
     }
 
     public String register(User user) {
