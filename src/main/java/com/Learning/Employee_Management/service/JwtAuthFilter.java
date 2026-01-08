@@ -39,6 +39,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         // 2 & 3. Cryptographic Re-calculation (using your Salt from properties)
         String username = authUtil.getUsernameFromToken(token);
 
+
+
         // 4. Integration with Protected Modules
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             // Logic: Fetch user entity to confirm they still exist in your DB

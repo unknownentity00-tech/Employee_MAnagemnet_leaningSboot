@@ -52,7 +52,8 @@ public class JwtUtils {
     }
 
   public String generateAccessToken(User user){
-        return Jwts.builder()
+        return Jwts
+                .builder()
                 .subject(user.getUsername())
                 .claim("userId", user.getId().toString())
                 .issuedAt(new Date())
@@ -63,7 +64,8 @@ public class JwtUtils {
 
 
   public String generateRefreshToken(User user){
-        return Jwts.builder()
+        return Jwts
+                .builder()
                 . subject(user.getUsername())
                 .claim("userId", user.getId().toString())
                 .issuedAt(new Date())

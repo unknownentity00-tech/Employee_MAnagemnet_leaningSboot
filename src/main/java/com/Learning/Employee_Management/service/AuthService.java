@@ -19,7 +19,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
-
+   private final SessionService sessionService;
     public LoginResponse login(LoginRequest loginRequest) {
         // 1. Send credentials to the Authentication Manager (The Receptionist)
 //        Authentication authentication = authenticationManager.authenticate(
@@ -41,6 +41,7 @@ public class AuthService {
 //        String token = jwtUtils.generateToken(user);
         String  accesstoken  = jwtUtils.generateToken( user);
         String  refreshtoken = jwtUtils.generateRefreshToken(user);
+        sessionService.generateNewSession(user,refreshtoken);
         // 4. Return the response. Ensure types match your LoginResponse constructor!
         // If your DTO expects (String, Long), use user.getId()
 //        return new LoginResponse(token,
@@ -55,4 +56,17 @@ public class AuthService {
         userRepository.save(user);
         return "User Registered Successfully";
     }
+
+    public LoginResponse refreshToken(String refreshToken) {
+        Long userId = jwtUtils.getUserIdFromToken(refreshToken);
+        sessionService.validateSession(refreshToken);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String accessToken = jwtUtils.generateAccessToken(user);
+        return new LoginResponse(accessToken, refreshToken);
+    }
+
+
+
 }

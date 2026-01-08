@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -20,6 +21,8 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import static com.Learning.Employee_Management.entity.enums.Role.ADMIN;
+import static com.Learning.Employee_Management.entity.enums.Role.CREATOR;
 import static org.springframework.security.core.userdetails.User.withUsername;
 
 @Configuration
@@ -88,7 +91,9 @@ public class WebSecurityConfig  {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
-
+    private static final String[] publicRoutes = {
+            "/error", "/auth/**", "/home.html"
+    };
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
@@ -97,8 +102,11 @@ public class WebSecurityConfig  {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/api/employees/**").hasRole("ADMIN")
+                        .requestMatchers(publicRoutes).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/posts/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/posts/**")
+                        .hasAnyRole(ADMIN.name(), CREATOR.name())
+
                         .anyRequest().authenticated()
                 )
                 // Logic: Guard checks the JWT Dish for every internal request
